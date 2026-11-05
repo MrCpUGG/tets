@@ -1,0 +1,38 @@
+name: Free VPS
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 */6 * * *'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Tailscale
+        uses: tailscale/github-action@v2
+        with:
+          authkey: tskey-auth-kErZBCJmtT11CNTRL-nvDLiEAc2aaPUfM9Q6XUaa2MxqVRzZr2
+          args: --hostname=github-vps
+
+      - name: Install SSH and tmate
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y openssh-server tmate
+          sudo systemctl enable ssh
+          sudo systemctl start ssh
+
+      - name: Start tmate session
+        run: |
+          tmate -S /tmp/tmate.sock new-session -d
+          tmate -S /tmp/tmate.sock wait tmate-ready
+          echo "=== SSH Connection String ==="
+          tmate -S /tmp/tmate.sock display -p '#{tmate_ssh}'
+          echo "=== Web Connection String ==="
+          tmate -S /tmp/tmate.sock display -p '#{tmate_web}'
+          sleep 21600
